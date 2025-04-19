@@ -1,4 +1,4 @@
-The CNN model and MLP model in the paper and the training and test sets used to train and test the models are recorded here. 
+The CNN model and MLP model in the paper and the training and test sets used to train and test the models are recorded here.  
 Reference training set data link:  
 https://www.kaggle.com/datasets/datamunge/sign-language-mnist?resource=download  
 
