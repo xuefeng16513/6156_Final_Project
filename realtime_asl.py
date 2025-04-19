@@ -4,10 +4,13 @@ import tensorflow as tf
 import time
 import os
 import mediapipe as mp # Import MediaPipe
+from collections import deque
+
 
 # --- Constants ---
 MODEL_PATH = "hand_sign_cnn_model.h5"
 IMG_SIZE = 28  # Input size expected by the CNN model (MUST MATCH TRAINING)
+last_predictions = deque(maxlen=5)  # Save the last 5 frames of prediction
 # ROI constants are no longer needed for the fixed box
 
 # --- MediaPipe Hand Detection Setup ---
@@ -132,6 +135,11 @@ while True:
                     gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
                     # 2. Resize to the model's expected input size (28x28)
                     resized_roi = cv2.resize(gray_roi, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA)
+
+                    zoom_factor = 10
+                    zoomed_roi = cv2.resize(resized_roi, (IMG_SIZE * zoom_factor, IMG_SIZE * zoom_factor), interpolation=cv2.INTER_NEAREST)
+                    cv2.imshow('Preprocessed Input (Zoomed)', zoomed_roi)
+
                     # 3. Normalize pixel values (0-1)
                     normalized_roi = resized_roi / 255.0
                     # 4. Reshape for the model (batch, height, width, channels)
@@ -141,7 +149,11 @@ while True:
                     prediction = model.predict(input_data, verbose=0)
                     predicted_index = np.argmax(prediction[0])
                     confidence = np.max(prediction[0]) * 100
-                    predicted_letter = index_to_letter.get(predicted_index, '?')
+                    # predicted_letter = index_to_letter.get(predicted_index, '?')
+                    last_predictions.append(predicted_index)
+                    voted_index = max(set(last_predictions), key=last_predictions.count)
+                    predicted_letter = index_to_letter.get(voted_index, '?')
+
 
                     # Update the text to display
                     predicted_text = f"{predicted_letter} ({confidence:.1f}%)"
