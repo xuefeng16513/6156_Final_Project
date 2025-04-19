@@ -8,6 +8,10 @@ import pandas as pd
 import time
 import psutil
 import matplotlib.pyplot as plt
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import ModelCheckpoint
+
+
 
 # Read training data
 train_file_path = "train.csv"  
@@ -36,18 +40,47 @@ num_classes = np.max(np.concatenate((y_train, y_test))) + 1
 y_train = to_categorical(y_train, num_classes)
 y_test = to_categorical(y_test, num_classes)
 
+datagen = ImageDataGenerator(
+    rotation_range=10,
+    zoom_range=0.1,
+    width_shift_range=0.1,
+    height_shift_range=0.1
+)
+datagen.fit(X_train)
+
+
 # Build CNN model
+
+# model = keras.Sequential([
+#     layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+#     layers.MaxPooling2D((2, 2)),
+#     layers.Conv2D(64, (3, 3), activation='relu'),
+#     layers.MaxPooling2D((2, 2)),
+#     layers.Conv2D(64, (3, 3), activation='relu'),
+#     layers.Flatten(),
+#     layers.Dense(128, activation='relu'),
+#     layers.Dropout(0.5),
+#     layers.Dense(num_classes, activation='softmax')
+# ])
+
 model = keras.Sequential([
-    layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+    layers.Conv2D(32, (3, 3), padding='same', activation='relu', input_shape=(28, 28, 1)),
+    layers.BatchNormalization(),
     layers.MaxPooling2D((2, 2)),
-    layers.Conv2D(64, (3, 3), activation='relu'),
+
+    layers.Conv2D(64, (3, 3), padding='same', activation='relu'),
+    layers.BatchNormalization(),
     layers.MaxPooling2D((2, 2)),
-    layers.Conv2D(64, (3, 3), activation='relu'),
-    layers.Flatten(),
+
+    layers.Conv2D(128, (3, 3), padding='same', activation='relu'),
+    layers.BatchNormalization(),
+    layers.GlobalAveragePooling2D(),
+
     layers.Dense(128, activation='relu'),
     layers.Dropout(0.5),
     layers.Dense(num_classes, activation='softmax')
 ])
+
 
 # Compile the model
 # Set the learning rate
@@ -59,7 +92,12 @@ model.compile(optimizer=custom_adam,
 
 # Train the model and record the training history
 start_time = time.time()
-history = model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test), batch_size=32)
+checkpoint = ModelCheckpoint("best_model.h5", monitor='val_accuracy', save_best_only=True)
+# history = model.fit(X_train, y_train, epochs=30, validation_data=(X_test, y_test), batch_size=32)
+history = model.fit(datagen.flow(X_train, y_train, batch_size=32),
+                    epochs=15,
+                    validation_data=(X_test, y_test),
+                    callbacks=[checkpoint])
 total_training_time = time.time() - start_time
 print(f"Total Training Time: {total_training_time:.2f} seconds")
 
