@@ -4,10 +4,29 @@ import tensorflow as tf
 import time
 import os
 import mediapipe as mp # Import MediaPipe
+from collections import deque
+
+def resize_with_padding(img, size=128):
+    h, w = img.shape[:2]
+    scale = size / max(h, w)
+    nh, nw = int(h * scale), int(w * scale)
+    img_resized = cv2.resize(img, (nw, nh))
+
+    # create background
+    pad_top = (size - nh) // 2
+    pad_bottom = size - nh - pad_top
+    pad_left = (size - nw) // 2
+    pad_right = size - nw - pad_left
+
+    img_padded = cv2.copyMakeBorder(img_resized, pad_top, pad_bottom, pad_left, pad_right,
+                                    borderType=cv2.BORDER_CONSTANT, value=[0, 0, 0])
+    return img_padded
+
 
 # --- Constants ---
 MODEL_PATH = "hand_sign_cnn_model.h5"
-IMG_SIZE = 28  # Input size expected by the CNN model (MUST MATCH TRAINING)
+IMG_SIZE = 128  # Input size expected by the CNN model (MUST MATCH TRAINING)
+last_predictions = deque(maxlen=5)  # Save the last 5 frames of prediction
 # ROI constants are no longer needed for the fixed box
 
 # --- MediaPipe Hand Detection Setup ---
@@ -31,16 +50,16 @@ index_to_letter = {
      0:'A', 1:'B', 2:'C', 3:'D', 4:'E', 5:'F', 6:'G', 7:'H', 8:'I',
      # Index 9 (J) is skipped in the standard SL-MNIST dataset label scheme
      10:'K', 11:'L', 12:'M', 13:'N', 14:'O', 15:'P', 16:'Q', 17:'R',
-     18:'S', 19:'T', 20:'U', 21:'V', 22:'W', 23:'X', 24:'Y', 25:'Z'
+     18:'S', 19:'T', 20:'U', 21:'V', 22:'W', 23:'X', 24:'Y', 25:'Z',26: 'del', 27: 'nothing', 28: 'space'
      # This mapping assumes index 25 is Z, matching 26 total letters mapped
      # across the available indices 0-24 (if J is truly skipped). Let's assume 0-24 = A-Y (no Z) to match the 25 classes
 }
-index_to_letter = {
-     0:'A', 1:'B', 2:'C', 3:'D', 4:'E', 5:'F', 6:'G', 7:'H', 8:'I',
-     9:'K', 10:'L', 11:'M', 12:'N', 13:'O', 14:'P', 15:'Q', 16:'R',
-    17:'S', 18:'T', 19:'U', 20:'V', 21:'W', 22:'X', 23:'Y', 24:'Z' # Assuming 0-24 maps to A-Z skipping J
-}
-print(f"Using updated label mapping for 25 classes (Indices 0-24). Assuming A-Z skipping J.")
+# index_to_letter = {
+#     0:'A', 1:'B', 2:'C', 3:'D', 4:'E', 5:'F', 6:'G', 7:'H', 8:'I',
+#     9:'K', 10:'L', 11:'M', 12:'N', 13:'O', 14:'P', 15:'Q', 16:'R',
+#    17:'S', 18:'T', 19:'U', 20:'V', 21:'W', 22:'X', 23:'Y', 24:'Z' # Assuming 0-24 maps to A-Z skipping J
+# }
+# print(f"Using updated label mapping for 25 classes (Indices 0-24). Assuming A-Z skipping J.")
 
 
 # --- Load the Trained Model ---
@@ -129,19 +148,30 @@ while True:
                 # --- Preprocess the Cropped Hand ROI ---
                 try:
                     # 1. Convert to Grayscale
-                    gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+                    # gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
                     # 2. Resize to the model's expected input size (28x28)
-                    resized_roi = cv2.resize(gray_roi, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA)
+                    # resized_roi = cv2.resize(gray_roi, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA)
+                    # resized_roi = cv2.resize(roi, (IMG_SIZE, IMG_SIZE))
+                    resized_roi = resize_with_padding(roi, IMG_SIZE)
+
+                    zoom_factor = 2
+                    zoomed_roi = cv2.resize(resized_roi, (IMG_SIZE * zoom_factor, IMG_SIZE * zoom_factor), interpolation=cv2.INTER_NEAREST)
+                    cv2.imshow('Preprocessed Input (Zoomed)', zoomed_roi)
+
                     # 3. Normalize pixel values (0-1)
                     normalized_roi = resized_roi / 255.0
                     # 4. Reshape for the model (batch, height, width, channels)
-                    input_data = normalized_roi.reshape(1, IMG_SIZE, IMG_SIZE, 1)
+                    input_data = normalized_roi.reshape(1, IMG_SIZE, IMG_SIZE, 3)
 
                     # --- Make Prediction ---
                     prediction = model.predict(input_data, verbose=0)
                     predicted_index = np.argmax(prediction[0])
                     confidence = np.max(prediction[0]) * 100
-                    predicted_letter = index_to_letter.get(predicted_index, '?')
+                    # predicted_letter = index_to_letter.get(predicted_index, '?')
+                    last_predictions.append(predicted_index)
+                    voted_index = max(set(last_predictions), key=last_predictions.count)
+                    predicted_letter = index_to_letter.get(voted_index, '?')
+
 
                     # Update the text to display
                     predicted_text = f"{predicted_letter} ({confidence:.1f}%)"
