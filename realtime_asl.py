@@ -6,6 +6,14 @@ import os
 import mediapipe as mp # Import MediaPipe
 from collections import deque
 
+# --- Constants ---
+MODEL_PATH = "cnn_mlp_generator_model.h5"
+IMG_SIZE = 128  # Input size expected by the CNN model (MUST MATCH TRAINING)
+last_predictions = deque(maxlen=5)  # Save the last 5 frames of prediction
+# ROI constants are no longer needed for the fixed box
+recognized_text = ""  # Save the recognized complete string
+last_append_time = time.time()
+
 def resize_with_padding(img, size=128):
     h, w = img.shape[:2]
     scale = size / max(h, w)
@@ -35,11 +43,31 @@ def extract_123d_keypoints(landmarks):
     flat_kp = np.concatenate([coords.flatten()] + [np.array(diffs).flatten()])
     return flat_kp
 
-# --- Constants ---
-MODEL_PATH = "cnn_mlp_generator_model.h5"
-IMG_SIZE = 128  # Input size expected by the CNN model (MUST MATCH TRAINING)
-last_predictions = deque(maxlen=5)  # Save the last 5 frames of prediction
-# ROI constants are no longer needed for the fixed box
+def render_text_window(text, width=640, height=460, line_height=40, font_scale=1.2):
+    window = np.ones((height, width, 3), dtype=np.uint8) * 255
+
+    lines = []
+    current_line = ''
+    for ch in text:
+        test_line = current_line + ch
+        text_size = cv2.getTextSize(test_line, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 2)[0]
+        if text_size[0] < width - 20:
+            current_line = test_line
+        else:
+            lines.append(current_line)
+            current_line = ch
+    if current_line:
+        lines.append(current_line)
+
+    # Automatic scrolling
+    max_lines = height // line_height
+    lines_to_display = lines[-max_lines:]
+
+    for i, line in enumerate(lines_to_display):
+        y = (i + 1) * line_height
+        cv2.putText(window, line, (10, y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), 2)
+
+    return window
 
 # --- MediaPipe Hand Detection Setup ---
 mp_hands = mp.solutions.hands
@@ -179,7 +207,7 @@ while True:
                     # prediction = model.predict(input_data, verbose=0)
                     kp_input = extract_123d_keypoints(hand_landmarks.landmark)
                     kp_input = kp_input.reshape(1, 123)
-                    # Fusion input predictions
+                    # 融合输入预测
                     prediction = model.predict([input_data, kp_input], verbose=0)
 
                     predicted_index = np.argmax(prediction[0])
@@ -189,6 +217,23 @@ while True:
                     voted_index = max(set(last_predictions), key=last_predictions.count)
                     predicted_letter = index_to_letter.get(voted_index, '?')
 
+                    # modify recognized_text
+                    now = time.time()
+                    if now - last_append_time >= 1:
+                        if predicted_letter == 'del':
+                            recognized_text = recognized_text[:-1]
+                            last_append_time = now
+
+                        elif predicted_letter == 'space':
+                            recognized_text += ' '
+                            last_append_time = now
+
+                        elif predicted_letter.isalpha():
+                            if len(recognized_text) == 0:
+                                recognized_text += predicted_letter.upper()
+                            else:
+                                recognized_text += predicted_letter.lower()
+                            last_append_time = now
 
                     # Update the text to display
                     predicted_text = f"{predicted_letter} ({confidence:.1f}%)"
@@ -213,6 +258,10 @@ while True:
     # --- Display the Prediction Text on the frame ---
     cv2.putText(display_frame, current_predicted_text, (10, 30), # Position text top-left
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    
+    # --- Display the accumulated recognized text ---
+    text_window = render_text_window(recognized_text)
+    cv2.imshow("Recognized Text", text_window)
 
     # Display the resulting frame
     cv2.imshow('ASL Letter Recognition (MediaPipe - Press Q to Quit)', display_frame)
