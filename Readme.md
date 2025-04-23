@@ -1,8 +1,6 @@
-The CNN model and MLP model in the paper and the training and test sets used to train and test the models are recorded here.  
-Reference training set data link now:  
-https://www.kaggle.com/datasets/datamunge/sign-language-mnist?resource=download  
+This branch modified the structure of the CNN model and used a new dataset to train and test the model.  
 
-The project plans to use a new training set, using color jepg images instead of grayscale images:  
+The new training set used color jepg images instead of grayscale images:  
 https://www.kaggle.com/datasets/debashishsau/aslamerican-sign-language-aplhabet-dataset/data  
 
 The complete training set and test set links are as follows. How to use: Unzip and put them in the same directory as the CNN model  
