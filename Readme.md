@@ -6,7 +6,7 @@ https://www.kaggle.com/datasets/debashishsau/aslamerican-sign-language-aplhabet-
 The complete training set and test set contain the keypoints links are as follows. How to use: Put them in the same directory as the model  
 https://drive.google.com/file/d/1NoU9AfUhlmbvTh8knvmPwnEs_mdmw_Fp/view?usp=sharing  
 
-The trained model file link is as follows:
+The trained model file link is as follows:  
 https://drive.google.com/file/d/1OkuzSVnq1qsfPyEQGJUnsTGXNUkfFimv/view?usp=sharing  
 
 Make sure you have the following libraries installed:  
