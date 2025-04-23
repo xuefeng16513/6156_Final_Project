@@ -22,9 +22,21 @@ def resize_with_padding(img, size=128):
                                     borderType=cv2.BORDER_CONSTANT, value=[0, 0, 0])
     return img_padded
 
+def extract_123d_keypoints(landmarks):
+    coords = np.array([[lm.x, lm.y, lm.z] for lm in landmarks])
+    edges = [
+        (0, 1), (1, 2), (2, 3), (3, 4),
+        (0, 5), (5, 6), (6, 7), (7, 8),
+        (0, 9), (9,10), (10,11), (11,12),
+        (0,13), (13,14), (14,15), (15,16),
+        (0,17), (17,18), (18,19), (19,20)
+    ]
+    diffs = [coords[j] - coords[i] for i, j in edges]
+    flat_kp = np.concatenate([coords.flatten()] + [np.array(diffs).flatten()])
+    return flat_kp
 
 # --- Constants ---
-MODEL_PATH = "hand_sign_cnn_model.h5"
+MODEL_PATH = "cnn_mlp_generator_model.h5"
 IMG_SIZE = 128  # Input size expected by the CNN model (MUST MATCH TRAINING)
 last_predictions = deque(maxlen=5)  # Save the last 5 frames of prediction
 # ROI constants are no longer needed for the fixed box
@@ -164,7 +176,12 @@ while True:
                     input_data = normalized_roi.reshape(1, IMG_SIZE, IMG_SIZE, 3)
 
                     # --- Make Prediction ---
-                    prediction = model.predict(input_data, verbose=0)
+                    # prediction = model.predict(input_data, verbose=0)
+                    kp_input = extract_123d_keypoints(hand_landmarks.landmark)
+                    kp_input = kp_input.reshape(1, 123)
+                    # 融合输入预测
+                    prediction = model.predict([input_data, kp_input], verbose=0)
+
                     predicted_index = np.argmax(prediction[0])
                     confidence = np.max(prediction[0]) * 100
                     # predicted_letter = index_to_letter.get(predicted_index, '?')
