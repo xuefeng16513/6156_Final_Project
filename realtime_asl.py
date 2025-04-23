@@ -179,7 +179,7 @@ while True:
                     # prediction = model.predict(input_data, verbose=0)
                     kp_input = extract_123d_keypoints(hand_landmarks.landmark)
                     kp_input = kp_input.reshape(1, 123)
-                    # 融合输入预测
+                    # Fusion input predictions
                     prediction = model.predict([input_data, kp_input], verbose=0)
 
                     predicted_index = np.argmax(prediction[0])
