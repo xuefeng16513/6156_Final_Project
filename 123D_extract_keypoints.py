@@ -10,13 +10,13 @@ mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=True, max_num_hands=1)
 os.makedirs(target_root, exist_ok=True)
 
-# 定义手部骨架连接边（20条），参考 MediaPipe Hand 的拓扑结构
+# Define the hand skeleton connection edges (20), refer to the topology of MediaPipe Hand
 edges = [
-    (0, 1), (1, 2), (2, 3), (3, 4),       # 拇指
-    (0, 5), (5, 6), (6, 7), (7, 8),       # 食指
-    (0, 9), (9,10), (10,11), (11,12),     # 中指
-    (0,13), (13,14), (14,15), (15,16),    # 无名指
-    (0,17), (17,18), (18,19), (19,20)     # 小指
+    (0, 1), (1, 2), (2, 3), (3, 4),       # Thumb
+    (0, 5), (5, 6), (6, 7), (7, 8),       # Index Finger
+    (0, 9), (9,10), (10,11), (11,12),     # Middle finger
+    (0,13), (13,14), (14,15), (15,16),    # Ring finger
+    (0,17), (17,18), (18,19), (19,20)     # Pinky
 ]
 
 for label in os.listdir(source_root):
@@ -40,13 +40,13 @@ for label in os.listdir(source_root):
             hand = results.multi_hand_landmarks[0]
             lm_list = [[lm.x, lm.y, lm.z] for lm in hand.landmark]  # 21x3
 
-            original = np.array(lm_list).flatten()  # 63维
+            original = np.array(lm_list).flatten()  # 63 dimensions
             diffs = []
             for i, j in edges:
                 vec = np.subtract(lm_list[j], lm_list[i])  # dx,dy,dz
                 diffs.extend(vec)
 
-            keypoint_123d = np.concatenate([original, diffs])  # 共123维
+            keypoint_123d = np.concatenate([original, diffs])  # Total 123 dimensions
         else:
             keypoint_123d = np.zeros(123, dtype=np.float32)
 
@@ -54,4 +54,4 @@ for label in os.listdir(source_root):
         np.save(os.path.join(keypoint_dir, npy_name), keypoint_123d)
 
 hands.close()
-print("✅ 已完成提取，共123维特征")
+print("Extraction completed, a total of 123 features")
