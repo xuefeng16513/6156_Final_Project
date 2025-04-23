@@ -11,7 +11,7 @@ from tensorflow.keras.layers import *
 from tensorflow.keras.optimizers import Adam
 
 # -----------------------
-# 1. 自定义生成器类
+# Custom generator class
 # -----------------------
 class ImageKeypointGenerator(Sequence):
     def __init__(self, image_root, keypoint_root, labels, batch_size=32, image_size=(128, 128), keypoint_dim=123, shuffle=True):
@@ -56,10 +56,10 @@ class ImageKeypointGenerator(Sequence):
                 #     continue
                 if np.all(keypoints == 0):
                     if 'test' in self.image_root.lower():
-                        keypoints = np.full((self.keypoint_dim,), 0.5, dtype=np.float32)  # 用均值或 0.5 填充
-                        print(f"⚠️ 测试集中保留无关键点: {img_path}")
+                        keypoints = np.full((self.keypoint_dim,), 0.5, dtype=np.float32)  # Fill with 0.5
+                        print(f"The key points in the test set are padded with 0.5:{img_path}")
                     else:
-                        continue  # 训练集跳过
+                        continue  # Skip the training set
                 X_img.append(img)
                 X_kp.append(keypoints)
                 y.append(label_index)
@@ -72,10 +72,10 @@ class ImageKeypointGenerator(Sequence):
             np.random.shuffle(self.filepaths)
 
 # -----------------------
-# 2. 模型构建
+# Model building
 # -----------------------
 def build_cnn_mlp_model(input_shape=(128, 128, 3), keypoint_dim=123, num_classes=29):
-    # CNN 分支
+    # CNN branch
     cnn_branch = models.Sequential([
         layers.Input(shape=input_shape),
 
@@ -106,7 +106,7 @@ def build_cnn_mlp_model(input_shape=(128, 128, 3), keypoint_dim=123, num_classes
         layers.Dropout(0.5),
     ])
 
-    # MLP 分支
+    # MLP branch
     input_kp = Input(shape=(keypoint_dim,))
     k = Dense(512, activation='relu')(input_kp)
     k = BatchNormalization()(k)
@@ -118,7 +118,7 @@ def build_cnn_mlp_model(input_shape=(128, 128, 3), keypoint_dim=123, num_classes
 
     k = Dense(128, activation='relu')(k)
 
-    # 合并 CNN 和 MLP
+    # Combining CNN and MLP
     merged = Concatenate()([cnn_branch.output, k])
     output = Dense(num_classes, activation='softmax')(merged)
 
@@ -128,7 +128,7 @@ def build_cnn_mlp_model(input_shape=(128, 128, 3), keypoint_dim=123, num_classes
     return model
 
 # -----------------------
-# 3. 数据生成器与训练
+# Data Generator and Training
 # -----------------------
 if __name__ == '__main__':
     labels = sorted(os.listdir('dataset/train'))
