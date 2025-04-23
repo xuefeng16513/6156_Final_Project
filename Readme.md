@@ -15,5 +15,5 @@ pip install numpy pandas opencv-python mediapipe tensorflow psutil
 How to train the model:  
 python Cnn_Mlp_Model.py   
   
-How to load trained model and call the camera to participate in real-time recognition:  
+How to load trained model(download from https://drive.google.com/file/d/1OkuzSVnq1qsfPyEQGJUnsTGXNUkfFimv/view?usp=sharing) and call the camera to participate in real-time recognition:  
 python realtime_asl.py  
