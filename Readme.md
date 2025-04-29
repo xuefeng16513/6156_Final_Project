@@ -17,3 +17,10 @@ python Cnn_Mlp_Model.py
   
 How to load trained model(download from https://drive.google.com/file/d/1OkuzSVnq1qsfPyEQGJUnsTGXNUkfFimv/view?usp=sharing) and call the camera to participate in real-time recognition:  
 python realtime_asl.py  
+
+
+
+
+
+Android deployment: (need to use andriod studio)
+https://drive.google.com/file/d/1jYwszGrE8MwULdNhZWZpaxJswsFUWESJ/view?usp=sharing
