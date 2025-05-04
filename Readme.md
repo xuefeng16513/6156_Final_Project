@@ -3,7 +3,7 @@ This branch modified the model structure and used a CNN and MLP fusion model, wh
 The new training set used color jepg images instead of grayscale images:  
 https://www.kaggle.com/datasets/debashishsau/aslamerican-sign-language-aplhabet-dataset/data  
 
-The complete training set and test set contain the keypoints links are as follows. How to use: Put them in the same directory as the model  
+Run 123D_extract_keypoints.py on the above dataset to get a complete dataset containing hand key points. The complete training set and test set contain the keypoints links are as follows. How to use: Put them in the same directory as the model  
 https://drive.google.com/file/d/1NoU9AfUhlmbvTh8knvmPwnEs_mdmw_Fp/view?usp=sharing  
 
 The trained model file link is as follows:  
