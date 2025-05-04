@@ -23,4 +23,7 @@ python realtime_asl.py
 
 
 Android deployment: (need to use andriod studio)
-https://drive.google.com/file/d/1jYwszGrE8MwULdNhZWZpaxJswsFUWESJ/view?usp=sharing
+https://drive.google.com/file/d/1jYwszGrE8MwULdNhZWZpaxJswsFUWESJ/view?usp=sharing  
+
+If you want to install our app on your phone, download and install our apk file here:  
+https://drive.google.com/file/d/10vyrBCGYixde24nYKNm1ZkPEgRwmJK-a/view?usp=drive_link
